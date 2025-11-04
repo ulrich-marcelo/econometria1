@@ -1,0 +1,9 @@
+wooldridge
+numpy
+pandas
+pandas_datareader
+statsmodels
+matplotlib
+scipy
+patsy
+linearmodels

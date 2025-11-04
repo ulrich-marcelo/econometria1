@@ -1,0 +1,87 @@
+---
+title: "probandoParaTP"
+output: html_document
+date: "2025-10-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(wooldridge)
+library(ggplot2)
+```
+
+
+## TP Econometría
+
+Consigna:
+
+1. Realizar un análisis estadístico de las variables bajo estudio en forma individual y de manera bivariada. Puntualmente: Calcular medidas de posición, de variabilidad, características superiores y realizar gráficos que presenten las series y muestren su grado de vinculación con las demás variables.
+
+2. Presentar el modelo a estimar. Comentar sus características salientes y explicar la
+razonabilidad de la magnitud y signo esperado de los coeficientes de regresión a obtenerse.
+3. Realizar una salida de regresión y comentar los resultados y de los indicadores estadísticos
+obtenidos, juzgando su razonabilidad.
+4. Especificar e interpretar el Coeficiente de Determinación Múltiple.
+5. Estimar Intervalos de Confianza y Test de Hipótesis para los coeficientes de regresión,
+suponiendo un margen de error del 5%.
+6. Realizar una predicción puntual y otra por intervalos y asumir un margen de error del 5%.
+7. Comprobar la presencia de multicolinealidad en caso de corresponder.
+8. Reexpresar el modelo en logaritmos. Estimar el modelo en su versión logarítmica tomando
+con tal finalidad la variable dependiente como logaritmo y una (o dos) variables explicativas
+a elección en logaritmos. Concluir sobre la interpretación de los coeficientes estimados y
+sobre la incidencia de dicha transformación sobre las pruebas de validación y de bondad de
+ajuste.
+9. Verificar si existe un error de especificación.
+10. Testear por heterocedasticidad.
+
+
+### CEOSAL
+```{r}
+library(wooldridge)
+data(ceosal1, package='wooldridge')
+
+head(ceosal1)
+
+
+
+
+```
+
+#### 1. Analisis de variables
+
+Qué cosas puedo analizar de las variables?
+- distribución de cada una (media, var, grafico de distribución/hist)
+- relación con la variable objetivo (salary) (grafico bivariado)(covar con salary?)
+- matriz de correlación entre las posibles variables predictoras (evitamos multicolinealidad)
+
+```{r}
+medias <- c()
+vars <- c()
+i <- 1
+for (columna in colnames(ceosal1)){
+  medias <- c(medias, mean(ceosal1[[columna]]))
+  vars <- c(vars, var(ceosal1[[columna]]))
+}
+medias
+vars
+
+
+```
+
+```{r}
+ggplot(data = ceosal1)+
+  geom_point(aes(x=ceosal1$pcsalary, y=ceosal1$salary))
+```
+
+```{r}
+data(ceosal1, package='wooldridge')
+data(audit, package='wooldridge')
+data(wage1, package='wooldridge')
+data(vote1, package='wooldridge')
+data(meap93, package='wooldridge')
+data(gpa1, package='wooldridge')
+data(crime1, package='wooldridge')
+data(discrim, package='wooldridge')
+data(hprice2, package='wooldridge')
+```
+

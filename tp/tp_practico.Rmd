@@ -1,0 +1,183 @@
+---
+title: "TP Econometría"
+output: html_document
+date: "2025-11-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Set-up
+
+Parece obvio decirlo, pero hay que instalar las siguientes librerías para que esto funcione:
+- [listar librerías]
+
+
+
+```{r}
+library(wooldridge)
+library(ggplot2)
+library(dplyr)
+library(reshape)
+library(viridis)
+```
+
+
+
+# meap93
+
+Este conjunto de datos contiene información sobre los resultados académicos y los recursos de las escuelas secundarias en el estado de Michigan, EE. UU., durante el año 1993.
+
+El dataset fue recopilado por el Departamento de Educación de Michigan. El objetivo principal suele ser analizar cómo los recursos de la escuela (como el gasto por alumno o el salario de los profesores) y las características demográficas de los estudiantes (como el porcentaje en programas de almuerzo) afectan los resultados académicos (tasas de graduación y aprobación de exámenes).
+
+El archivo contiene 408 observaciones (una por cada escuela) y 17 variables (columnas).
+
+## Descripción de las Variables:
+- lnchprg: Porcentaje de estudiantes en el "programa de almuerzos escolares" (un indicador común de la situación socioeconómica de los estudiantes, son como becas para almorzar).
+
+- enroll: Matrícula escolar (cantidad total de estudiantes inscriptos en la escuela).
+
+- staff: Personal total por cada 1000 estudiantes (esto incluye profesores, administrativos, etc.).
+
+- expend: Gasto por estudiante, medido en dólares ($).
+
+- salary: Salario promedio de los profesores, medido en dólares ($).
+
+- benefits: Beneficios promedio de los profesores, medidos en dólares ($) (ej. seguro médico).
+
+- droprate: Tasa de deserción escolar (abandono), expresada en porcentaje).
+
+- gradrate: Tasa de graduación escolar, expresada en porcentaje.
+
+- math10: Porcentaje de estudiantes que aprobaron el examen MEAP de matemáticas de 10º grado (aprox tercer año de CABA). (MEAP es el examen estandarizado de evaluación de Michigan).
+
+- sci11: Porcentaje de estudiantes que aprobaron el examen MEAP de ciencias de 11º grado (aprox cuarto año de CABA).
+
+- totcomp: Compensación total promedio del profesor (es la suma de salary + benefits).
+
+- ltotcomp: Logaritmo natural de la compensación total ( log(totcomp) ).
+
+- lexpend: Logaritmo natural del gasto por estudiante ( log(expend) ).
+
+- lenroll: Logaritmo natural de la matrícula escolar ( log(enroll) ).
+
+- lstaff: Logaritmo natural del personal ( log(staff) ).
+
+- bensal: Ratio o proporción entre beneficios y salario (calculado como benefits / salary).
+
+- lsalary: Logaritmo natural del salario promedio ( log(salary) ).
+
+
+##Analisis de variables:
+- Media, Varianza, etc. de cada una
+- Histogramas de cómo se distribuyen
+- Relación con las demas variables (matriz de correlación)
+
+
+```{r}
+data('meap93', package = 'wooldridge')
+attach(meap93)
+
+head(meap93)
+```
+
+```{r}
+summary(meap93)
+```
+
+Qué nos dice esto? (además de lo obvio, varias metricas descriptivas de cada variable). Tenemos algunos datos que son porcentajes, otros que son proporciones cada 1000 y otras son dinero (y ni hablar de los logaritmos); por lo que sería conveniente estandarizar las variables (y que así la escala no sea un problema a la hora de interpretar los coeficientes).
+
+
+```{r}
+for(col in colnames(meap93)){
+  print(col)
+  
+ p <- ggplot(meap93, aes(x=.data[[col]]))+
+    geom_histogram(
+      bins = 20,
+      fill = '#21918c'
+    )+
+    labs("title" = paste('Distribucion de',col, sep=" "),
+         "x" = col, y="Frecuencia")+
+    theme_minimal()+
+    theme(plot.title = element_text(hjust = 0.5))
+  
+  print(p)
+}
+```
+
+
+### Cosas raras
+- gradrate tiene valores mayores a 100 (tasa de graduación mayor a 100??)
+
+```{r}
+# Filtra y muestra las filas donde gradrate es mayor a 100
+escuelas_con_error_grad <- meap93[meap93$gradrate > 100, ]
+print(escuelas_con_error_grad)
+  
+
+```
+Son 7 escuelas de 403, AFUERA!
+
+- hay un droprate de 60%, está muy lejos del resto. O bien es una escuela muy mala o es un error de tipeo (0,6 vs 0,06 suena más probable, considerando que el resto de parametros son bastante normales, en particular gradrate de 80)
+
+```{r}
+# Filtra y muestra las filas donde droprate es mayor a 50
+escuelas_con_error_drop <- meap93[meap93$droprate > 50, ]
+print(escuelas_con_error_drop)
+
+```
+
+
+En base a todo esto, hay dos opciones: o las elimino o las convierto en NA para no perder la info de las otras columnas.
+
+```{r}
+meap93$gradrate[meap93$gradrate > 100] <- NA
+meap93$droprate[meap93$droprate > 50] <- NA
+```
+
+
+
+#### Relaciones entre los datos
+
+```{r}
+corr_matrix <- melt(cor(meap93))
+ggplot(corr_matrix, aes(
+  x = X1,
+  y = X2,
+  fill = value
+))+
+  geom_tile()+
+  scale_fill_viridis_c(option = 'A')+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+```{r}
+#filtro relaciones interesantes (|cor|>0.5)
+corr_matrix$mayor <- abs(corr_matrix$value) >= 0.5
+corr_melted_upper <- corr_matrix[as.integer(corr_matrix$X1) < as.integer(corr_matrix$X2), ]
+ggplot(corr_melted_upper, aes(
+  x = X1,
+  y = X2,
+  fill = mayor
+))+
+  geom_tile()+
+  scale_fill_viridis_d(option = 'A')+
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45))
+```
+
+
+
+Acá vemos los siguientes patrones interesantes:
+```{r}
+interesantes <- filter(corr_melted_upper, corr_melted_upper$mayor)
+interesantes
+```
+
+
+
+
