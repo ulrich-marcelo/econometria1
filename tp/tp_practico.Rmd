@@ -8,6 +8,20 @@ date: "2025-11-03"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Consignas
+
+1.	Realizar un análisis estadístico de las variables bajo estudio en forma individual y de manera bivariada. Puntualmente: Calcular medidas de posición, de variabilidad, características superiores y realizar gráficos que presenten las series y muestren su grado de vinculación con las demás variables. 
+2.	Presentar el modelo a estimar. Comentar sus características salientes y explicar la razonabilidad de la magnitud y signo esperado de los coeficientes de regresión a obtenerse. 
+3.	Realizar una salida de regresión y comentar los resultados y de los indicadores estadísticos obtenidos, juzgando su razonabilidad. 
+4.	Especificar e interpretar el Coeficiente de Determinación Múltiple. 
+5.	Estimar Intervalos de Confianza y Test de Hipótesis para los coeficientes de regresión, suponiendo un margen de error del 5%. 
+6.	Realizar una predicción puntual y otra por intervalos y asumir un margen de error del 5%. 
+7.	Comprobar la presencia de multicolinealidad en caso de corresponder. 
+8.	Reexpresar el modelo en logaritmos. Estimar el modelo en su versión logarítmica tomando con tal finalidad la variable dependiente como logaritmo y una (o dos) variables explicativas a elección en logaritmos. Concluir sobre la interpretación de los coeficientes estimados y sobre la incidencia de dicha transformación sobre las pruebas de validación y de bondad de ajuste. 
+9.	Verificar si existe un error de especificación. 
+10.	Testear por heterocedasticidad. 
+
+
 
 # Set-up
 
@@ -70,7 +84,7 @@ El archivo contiene 408 observaciones (una por cada escuela) y 17 variables (col
 - lsalary: Logaritmo natural del salario promedio ( log(salary) ).
 
 
-##Analisis de variables:
+## Punto 1: Analisis de variables:
 - Media, Varianza, etc. de cada una
 - Histogramas de cómo se distribuyen
 - Relación con las demas variables (matriz de correlación)
@@ -143,13 +157,14 @@ meap93$droprate[meap93$droprate > 50] <- NA
 #### Relaciones entre los datos
 
 ```{r}
-corr_matrix <- melt(cor(meap93))
+corr_matrix <- melt(cor(meap93, use = "pairwise.complete.obs")) #para que saltee los NAs
 ggplot(corr_matrix, aes(
   x = X1,
   y = X2,
   fill = value
 ))+
   geom_tile()+
+  geom_text(aes(label = round(value,2)), color = "black", size = 3)+
   scale_fill_viridis_c(option = 'A')+
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 45))
@@ -165,6 +180,7 @@ ggplot(corr_melted_upper, aes(
   fill = mayor
 ))+
   geom_tile()+
+  geom_text(aes(label = round(value,2)), color = "black", size = 3)+
   scale_fill_viridis_d(option = 'A')+
   theme_minimal()+
   theme(axis.text.x = element_text(angle = 45))
@@ -177,6 +193,20 @@ Acá vemos los siguientes patrones interesantes:
 interesantes <- filter(corr_melted_upper, corr_melted_upper$mayor)
 interesantes
 ```
+
+
+En base a todo esto, me interesa predecir math10. En base a qué? de momento uso todo.
+```{r}
+colnames(meap93)
+```
+
+```{r}
+model2 <- lm(math10 ~ lnchprg + enroll  + staff + expend + salary + benefits + droprate + gradrate +  sci11 + totcomp +  ltotcomp + lexpend +  lenroll +  lstaff +   bensal+ lsalary, data=meap93)
+summary(model2)
+```
+El R-ajustado es de 0.26, es decir, es un mal modelo. [ni me gasto en separar train y test porque no lo vale en este caso]
+
+En particular, al meter todo junto y, por ejemplo, no separar variables altamente correlacionadas (transformaciones logaritmicas y suma salary + benefits = totcomp), hace que haya errores estandar muy grandes en los coeficientes, haciendolos inestables y poco confiables. Además, al ser totcomp suma exacta entre salary y benefits, imposibilita el calculo de su coeficiente independientemente de sus variables compositoras, por lo que R automaticamente la elimina, mostrando NA en su lugar.
 
 
 
